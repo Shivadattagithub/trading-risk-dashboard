@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TradeRisk Dashboard — by Shiva Botla</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet"/>
+</head>
+<body>
+  <div class="noise"></div>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="logo">
+      <span class="logo-icon">⬡</span>
+      <span class="logo-text">TradeRisk</span>
+    </div>
+    <nav>
+      <a href="#" class="nav-link active" data-page="journal">📓 Journal</a>
+      <a href="#" class="nav-link" data-page="dashboard">📊 Dashboard</a>
+      <a href="#" class="nav-link" data-page="risk">🛡️ Risk Calc</a>
+      <a href="#" class="nav-link" data-page="macro">🌐 Macro Events</a>
+    </nav>
+    <div class="sidebar-footer">
+      <span>Built by</span>
+      <a href="https://github.com/ShivaBotla" target="_blank">Shiva Botla</a>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- ══════════════ JOURNAL PAGE ══════════════ -->
+    <div class="page active" id="page-journal">
+      <header class="page-header">
+        <h1>Trade Journal</h1>
+        <p class="subtitle">Log every trade. Improve every week.</p>
+      </header>
+
+      <div class="card form-card">
+        <h2 class="card-title">➕ Log New Trade</h2>
+        <div class="form-grid">
+          <label>Pair / Asset<input id="f-pair" placeholder="XAU/USD, BTC..."/></label>
+          <label>Direction
+            <select id="f-dir">
+              <option value="LONG">LONG</option>
+              <option value="SHORT">SHORT</option>
+            </select>
+          </label>
+          <label>Entry Price<input id="f-entry" type="number" placeholder="1920.50"/></label>
+          <label>Exit Price<input id="f-exit" type="number" placeholder="1935.00"/></label>
+          <label>Stop Loss<input id="f-sl" type="number" placeholder="1910.00"/></label>
+          <label>Position Size<input id="f-size" type="number" placeholder="0.10"/></label>
+          <label>Account Balance ($)<input id="f-bal" type="number" placeholder="10000"/></label>
+          <label>Setup / Tag<input id="f-tag" placeholder="FOMC play, CPI fade..."/></label>
+          <label style="grid-column:1/-1">Notes<textarea id="f-notes" placeholder="What did you see? What did you feel? What would you do differently?"></textarea></label>
+        </div>
+        <button class="btn-primary" onclick="addTrade()">Log Trade</button>
+      </div>
+
+      <div class="card">
+        <h2 class="card-title">📋 Trade History</h2>
+        <div class="table-wrap">
+          <table id="trade-table">
+            <thead>
+              <tr>
+                <th>Date</th><th>Pair</th><th>Dir</th><th>Entry</th><th>Exit</th>
+                <th>P&L ($)</th><th>R:R</th><th>Risk %</th><th>Tag</th><th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="trade-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════ DASHBOARD PAGE ══════════════ -->
+    <div class="page" id="page-dashboard">
+      <header class="page-header">
+        <h1>Performance Dashboard</h1>
+        <p class="subtitle">Know your edge. Protect your capital.</p>
+      </header>
+
+      <div class="stats-grid">
+        <div class="stat-card" id="stat-pnl">
+          <div class="stat-label">Total P&L</div>
+          <div class="stat-value" id="sv-pnl">$0.00</div>
+        </div>
+        <div class="stat-card" id="stat-wr">
+          <div class="stat-label">Win Rate</div>
+          <div class="stat-value" id="sv-wr">0%</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Avg R:R</div>
+          <div class="stat-value" id="sv-rr">0.00</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Max Drawdown</div>
+          <div class="stat-value" id="sv-dd">0%</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Profit Factor</div>
+          <div class="stat-value" id="sv-pf">0.00</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Sharpe (est.)</div>
+          <div class="stat-value" id="sv-sh">0.00</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 class="card-title">📈 Cumulative P&L Curve</h2>
+        <canvas id="pnl-chart" height="80"></canvas>
+      </div>
+
+      <div class="two-col">
+        <div class="card">
+          <h2 class="card-title">🏷️ P&L by Setup Tag</h2>
+          <canvas id="tag-chart" height="160"></canvas>
+        </div>
+        <div class="card">
+          <h2 class="card-title">📅 Day-of-Week Performance</h2>
+          <canvas id="dow-chart" height="160"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════ RISK CALC PAGE ══════════════ -->
+    <div class="page" id="page-risk">
+      <header class="page-header">
+        <h1>Risk Calculator</h1>
+        <p class="subtitle">Size correctly. Survive the drawdown.</p>
+      </header>
+
+      <div class="two-col">
+        <div class="card">
+          <h2 class="card-title">Position Sizer</h2>
+          <div class="form-grid single">
+            <label>Account Balance ($)<input id="rc-bal" type="number" placeholder="10000" oninput="calcRisk()"/></label>
+            <label>Risk per Trade (%)<input id="rc-riskpct" type="number" placeholder="1" step="0.1" oninput="calcRisk()"/></label>
+            <label>Entry Price<input id="rc-entry" type="number" placeholder="1920.50" oninput="calcRisk()"/></label>
+            <label>Stop Loss Price<input id="rc-sl" type="number" placeholder="1910.00" oninput="calcRisk()"/></label>
+            <label>Pip/Point Value ($)<input id="rc-pv" type="number" placeholder="1" oninput="calcRisk()"/></label>
+          </div>
+          <div class="risk-result" id="risk-result">
+            <div class="rr-row"><span>$ at Risk</span><span id="rr-dollar">—</span></div>
+            <div class="rr-row"><span>Stop Distance</span><span id="rr-dist">—</span></div>
+            <div class="rr-row highlight"><span>Position Size (units)</span><span id="rr-units">—</span></div>
+            <div class="rr-row highlight"><span>Position Size (lots)</span><span id="rr-lots">—</span></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2 class="card-title">R:R & Target Finder</h2>
+          <div class="form-grid single">
+            <label>Entry Price<input id="rr-entry" type="number" placeholder="1920.50" oninput="calcRR()"/></label>
+            <label>Stop Loss<input id="rr-sl" type="number" placeholder="1910.00" oninput="calcRR()"/></label>
+            <label>Target R:R Ratio<input id="rr-ratio" type="number" placeholder="2" step="0.5" oninput="calcRR()"/></label>
+            <label>Direction
+              <select id="rr-dir" onchange="calcRR()">
+                <option value="LONG">LONG</option>
+                <option value="SHORT">SHORT</option>
+              </select>
+            </label>
+          </div>
+          <div class="risk-result" id="rr-result">
+            <div class="rr-row"><span>Risk (points)</span><span id="rr-riskpts">—</span></div>
+            <div class="rr-row highlight"><span>Take Profit Price</span><span id="rr-tp">—</span></div>
+            <div class="rr-row"><span>Reward (points)</span><span id="rr-rwdpts">—</span></div>
+            <div class="rr-row"><span>Min Win Rate Needed</span><span id="rr-minwr">—</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 class="card-title">🔥 Drawdown Simulator</h2>
+        <p class="card-desc">Simulate consecutive losses to understand capital impact before it happens.</p>
+        <div class="form-grid" style="margin-bottom:1.5rem">
+          <label>Starting Capital ($)<input id="dd-cap" type="number" placeholder="10000" oninput="simDD()"/></label>
+          <label>Risk per Trade (%)<input id="dd-risk" type="number" placeholder="1" step="0.1" oninput="simDD()"/></label>
+          <label>Max Losing Streak<input id="dd-streak" type="number" placeholder="10" oninput="simDD()"/></label>
+        </div>
+        <div id="dd-bars"></div>
+        <div class="dd-summary" id="dd-summary"></div>
+      </div>
+    </div>
+
+    <!-- ══════════════ MACRO EVENTS PAGE ══════════════ -->
+    <div class="page" id="page-macro">
+      <header class="page-header">
+        <h1>Macro Event Tracker</h1>
+        <p class="subtitle">Know what moves markets. Trade around catalysts.</p>
+      </header>
+
+      <div class="card">
+        <h2 class="card-title">📅 Key Recurring Events</h2>
+        <p class="card-desc">Markets move around these catalysts. Log your plan <em>before</em> the event, review after.</p>
+        <div class="macro-grid" id="macro-grid"></div>
+      </div>
+
+      <div class="card">
+        <h2 class="card-title">📝 Event Trade Planner</h2>
+        <div class="form-grid">
+          <label>Event<input id="ev-name" placeholder="CPI, NFP, FOMC..."/></label>
+          <label>Date<input id="ev-date" type="date"/></label>
+          <label>Expected Vol.<select id="ev-vol"><option>Low</option><option>Medium</option><option selected>High</option><option>Extreme</option></select></label>
+          <label>Bias<select id="ev-bias"><option>Bullish</option><option>Bearish</option><option selected>Neutral/Wait</option></select></label>
+          <label style="grid-column:1/-1">Pre-Event Plan<textarea id="ev-plan" placeholder="What are you watching for? Key levels? Entry trigger? Risk amount?"></textarea></label>
+          <label style="grid-column:1/-1">Post-Event Review<textarea id="ev-review" placeholder="What happened? Did price react as expected? What did you learn?"></textarea></label>
+        </div>
+        <button class="btn-primary" onclick="addEvent()">Save Event Plan</button>
+      </div>
+
+      <div class="card" id="events-list-card">
+        <h2 class="card-title">📋 Saved Event Plans</h2>
+        <div id="events-list"></div>
+      </div>
+    </div>
+
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
